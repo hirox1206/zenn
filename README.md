@@ -1,3 +1,7 @@
-# Zenn CLI
+# Zenn Contents for Hyzsa
 
-* [📘 How to use](https://zenn.dev/zenn/articles/zenn-cli-guide)
+## 📘 Zenn
+- https://zenn.dev/hyzsa
+
+## ✍️ How to use
+- [Zenn CLIで記事・本を管理する方法](https://zenn.dev/zenn/articles/zenn-cli-guide)
