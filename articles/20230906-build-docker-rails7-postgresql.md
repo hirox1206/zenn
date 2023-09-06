@@ -2,7 +2,7 @@
 title: "【Docker】rails7 + PostgreSQLのdocker開発環境を構築する"
 emoji: "🛠️"
 type: "tech" # tech: 技術記事 / idea: アイデア
-topics: ['docker', 'rails', ]
+topics: ["docker", "rails"]
 published: true
 published_at: 2023-09-06 08:00
 ---
