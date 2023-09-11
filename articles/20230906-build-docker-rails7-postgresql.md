@@ -24,6 +24,11 @@ published_at: 2023-09-06 08:00
 ## 事前準備
 - 自身のPCに`docker`と`docker-compose`をインストールしておいてください
 
+https://matsuand.github.io/docs.docker.jp.onthefly/desktop/mac/install/
+
+> Docker Desktop for Mac には他の Docker アプリとともに Compose が含まれています。 したがって Mac ユーザーは Compose を個別にインストールする必要はありません。 
+*（引用元：https://matsuand.github.io/docs.docker.jp.onthefly/compose/install/ ）*
+
 ## 必要なファイルの準備
 任意の場所にプロジェクト管理用のフォルダを作成します。
 ```sh
