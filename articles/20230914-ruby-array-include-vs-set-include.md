@@ -8,15 +8,14 @@ published_at: 2023-09-14 08:00
 ---
 
 ## はじめに
-配列に特定の要素が含まれているかを判定したいとき、よく`Array#include?`を利用すると思いますが、その際に一工夫(`to_set`)してあげるだけで、より速く判定することができるようになります。
-この記事では、実際に比較検証していき、なぜ速くなるのかを解明していきます。
+配列に特定の要素が含まれているかを判定したいとき、よく`Array#include?`を利用すると思いますが、その際に一工夫（`to_set`）してあげるだけで、より速く判定することができます。
 
 ## 速くなる理由
-Arrayオブジェクトをレシーバにして`include?`した時と、Setオブジェクトをレシーバにして`include?`した時では、以下に記載しているような違いがあるので`to_set`した方が高速に判定することができるのです。
+`Array#include?`は検索アルゴリズムの線型探索にあたり、データ量(=要素数)が多くなるほど処理に時間がかかります。
+一方で`Set#include?`は検索アルゴリズムのハッシュ法にあたり、処理時間はデータ量(=要素数)に関係なく一定になるので、to_set した方が高速に判定することができるのです。
 
 ### Array#include?
-配列の先頭から順番に、引数で渡された値と等しいかをチェックしていき、等しい値があれば`true`を返します。
-検索アルゴリズムの線型探索にあたるので、要素(データ量)が増えるだけ、処理にかかる時間も増えます。
+配列の先頭から順番に、引数で渡された値と等しいかをチェックしていき、等しければ true を返します。
 ```ruby
 [1, 2, 3, 4, 5]
 # このような配列から4が含まれてるかを判定したい時
@@ -27,6 +26,13 @@ Arrayオブジェクトをレシーバにして`include?`した時と、Setオ�
 # ・※配列の要素全てを確認しても見つけられなかった場合は false を返す。
 ```
 
+:::details Array#include?の実装を詳しく見てみる
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/array.c#L5212-L5225
+
+C言語で書かれた実装を見てみると、配列の先頭から順番に判定していることがわかりますね。
+判定する要素が先頭から離れた位置にあればあるほど、一致するまでに時間がかかることが想像できます。
+:::
+
 ### Set#include?
 配列を渡してSetオブジェクトを生成した時、このSetオブジェクトは`{ 要素 => true, ... }`のようなハッシュを内部的に保持します。
 ```ruby
@@ -34,9 +40,47 @@ set = [1, 2, 3, 4, 5].to_set
 # このときsetオブジェクトは以下のようなハッシュを保持する。
 @hash = { 1 => true, 2 => true, 3 => true, 4 => true, 5 => true }
 ```
+:::details to_setした時の実装を詳しく見てみる
+【前提】`[1, 2, 3].to_set`を実行した状況を元に見ていきます。
 
-`Set#include?`では、以下のように内部的に保持しているハッシュを参照することで、存在している時は`true`が返り、存在しない時は`false`が返ります。
-そのため、要素(データ量)がどれだけ増えても、常に指定された位置にアクセスしに行くので、高速で判定することができるのです。
+### ①Enumerable#to_set
+https://github.com/ruby/ruby/blob/4655d2108ef14e66f64496f9029f65ba2302d9ea/prelude.rb#L28-L30
+
+単純に`Set.new([1, 2, 3])`しているだけですね。
+new はオブジェクトを生成するメソッドなので、Setクラスのオブジェクトが生成されます。
+
+### 　②Set#initialize
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L243-L253
+
+ここで注目してほしいのが、`@hash ||= Hash.new(false)`の部分です。
+デフォルト値が false のハッシュを生成して、インスタンス変数の`@hash`に保持しています。
+そして block は渡していないので、merge が実行されます。
+initialize には new に与えた引数がそのまま渡されるので、enum には`[1, 2, 3]`が格納されてます。
+そのため merge の引数として`[1, 2, 3]`が渡されます。
+
+### ③Set#merge
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L603-L613
+
+可変長引数として受け取っているので enums は `[[1, 2, 3]]` という状態になります。
+`enum`は配列になり`do_with_enum(enum) { |o| add(o) }`が実行されます。
+
+### ④Set#do_with_enum
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L272-L281
+
+Array は each_entry を持っているので`enum.each_entry(&block) if block`が実行されます。
+each_entry は、渡されたブロックを各要素に一度ずつ適用するので、`[1, 2, 3]`の各要素に対して add が実行されることになります。
+
+#### ⑤Set#add
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L519-L522
+
+ここで各要素を`@hash`のキーとしてセットしています。
+なので、`[1, 2, 3].to_set`を行うと内部的に以下のようなハッシュとして保持されるのです。
+```ruby
+@hash = { 1 => true, 2 => true, 3 => true }
+```
+:::
+
+`Set#include?`では、このハッシュを参照することで、存在している時は true が返り、存在しない時は false が返ります。
 ```ruby
 set = [1, 2, 3, 4, 5].to_set
 set.include?(4)
@@ -50,6 +94,14 @@ set.include?(6)
 # ・※ nil ではなく false が返されるのは、以下ハッシュのデフォルト値として false が設定されているためです。 
 @hash = { 1 => true, 2 => true, 3 => true, 4 => true, 5 => true }
 ```
+
+:::details Set#include?の実装を詳しく見てみる
+https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L401-L403
+
+見ての通り、Setオブジェクト生成時に内部的に保持したハッシュに対して、引数で指定された位置を参照しているだけです。
+:::
+
+このように、データ量(=要素数)がどれだけ増えても、常に指定された位置にアクセスしに行くので、高速で判定することができるのです。
 
 ## 実際に検証してみる
 `Array#include?`を利用した時と`Set#include?`を利用した時の処理速度を比較して、どれくらいの差があるのかを確認してみます。
@@ -96,67 +148,6 @@ Set:  0.000004   0.000001   0.000005 (  0.000003)
 ```
 
 `Array#include?`では要素数が増えていくごとに処理に時間がかかっていますが、`Set#include?`では要素数が増えても処理速度が変わっていないことがわかりますね。
-
-## コード調査　
-なぜこのような違いがあるのかを解明するために、ruby本体の実装を確認していきます。
-
-### Array#include?
-C言語で書かれた実装を見てみると、配列の先頭から順番に判定していることがわかりますね。
-判定する要素が先頭から離れた位置にあればあるほど、一致するまでに時間がかかることが想像できます。
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/array.c#L5212-L5225
-
-### Enumerable#to_set
-まずは配列を`to_set`した時に何が行われているかを見ていきます。
-ここでは`[1, 2, 3].to_set`を行った状況を元に考えていきます。
-
-https://github.com/ruby/ruby/blob/4655d2108ef14e66f64496f9029f65ba2302d9ea/prelude.rb#L28-L30
-
-単純に`Set.new([1, 2, 3])`しているだけですね。
-`new`メソッドはオブジェクトを生成するメソッドなのでSetクラスのオブジェクトが生成されます。
-ではSetクラスのオブジェクト初期化メソッドの実装を見ていきます。
-
-### Set#initialize
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L243-L253
-
-ここで注目してほしいのが、`@hash ||= Hash.new(false)`の部分です。
-デフォルト値が false のハッシュを生成して、インスタンス変数の`@hash`として保持しています。
-
-そしてblockは渡していないので`merge`メソッドに入ります。
-initialize には new に与えた引数がそのまま渡されるので、引数`enum` には`[1, 2, 3]`が格納されており、`merge`メソッドの引数として渡しています。
-
-### Set#merge
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L603-L613
-
-可変長引数として受け取っているので enums は `[[1, 2, 3]]` という状態になります。
-なので`enum`は配列になり`do_with_enum(enum) { |o| add(o) }`が実行されます。
-
-### Set#do_with_enum
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L272-L281
-
-Array は `each_entry`メソッドを持っているので`enum.each_entry(&block) if block`が実行されます。
-`each_entry`メソッドは、渡されたブロックを各要素に一度ずつ適用するので、`[1, 2, 3]`の各要素に対して`add`メソッドが実行されることになります。
-
-### Set#add
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L519-L522
-
-各要素を@hashのキーとしてセットしています。
-なので、`[1, 2, 3].to_set`を行うと内部的に以下のようなハッシュとして保持されていることになります。
-```ruby
-@hash = { 1 => true, 2 => true, 3 => true }
-```
-
-### Set#include?
-
-内部的にハッシュとして保持されていることがわかったところで、`Set#include?`の実装を見てみましょう。
-
-https://github.com/ruby/ruby/blob/a98209b8a70345714ac5f3028e0591f3ee50bba7/lib/set.rb#L401-L403
-
-見ての通り、引数で指定された位置を参照しているだけです。
 
 ## まとめ
 
