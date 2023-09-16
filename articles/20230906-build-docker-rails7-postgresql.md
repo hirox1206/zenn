@@ -126,12 +126,12 @@ Railsのアプリケーションを作成します。
 以下コマンドを実行すると、`src`フォルダ配下に、Railsアプリケーションに最低限必要なフォルダやファイルが自動的に生成されます。
 
 ```sh
-docker-compose run web rails new . --force --database=postgresql
+docker compose run web rails new . --force --database=postgresql
 ```
 
 `rails new`したことで`Gemfile`が更新されたので`bundle install`を行います。
 ```sh
-docker-compose build
+docker compose build
 ```
 
 ### ■ DB接続設定
@@ -158,12 +158,12 @@ test:
 ### ■ 起動
 DBを作成します。
 ```sh
-docker-compose run web rails db:create
+docker compose run web rails db:create
 ```
 
 コンテナを起動します。
 ```sh
-docker-compose up -d
+docker compose up -d
 ```
 
 ブラウザで http://localhost:4000/ にアクセスして、Railsが立ち上がっていれば成功です！
