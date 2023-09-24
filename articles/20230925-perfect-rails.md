@@ -9,6 +9,8 @@ published_at: 2023-09-25 08:00
 
 web エンジニア 1 年目の僕が「パーフェクト Ruby on Rails」で新しく学べた知識や、忘れかけてたことについて記録していきます。
 
+https://gihyo.jp/book/2020/978-4-297-11462-6
+
 ## Rails の思想(p24)
 
 - CoC(Convention over Configuration)
