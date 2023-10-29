@@ -3,7 +3,7 @@ title: "【Mac】初期セットアップ"
 emoji: "💻"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["mac"]
-published: true
+published: false
 published_at: 2023-09-19 08:00
 ---
 

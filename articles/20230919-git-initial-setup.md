@@ -3,7 +3,7 @@ title: "【Git】初期設定とSSH接続設定"
 emoji: "📖"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["git", "github"]
-published: false
+published: true
 published_at: 2023-09-19 08:00
 ---
 
