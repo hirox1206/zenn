@@ -3,7 +3,7 @@ title: "【docker】nokogiri 関連のエラーを解決する方法"
 emoji: "🧩"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["docker", "rails"]
-published: true
+published: false
 published_at: 2023-09-21 08:00
 ---
 
