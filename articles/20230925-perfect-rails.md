@@ -3,7 +3,7 @@ title: "【Rails】rails歴1年の僕が「パーフェクト Ruby on Rails」�
 emoji: "💭"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["rails"]
-published: true
+published: false
 published_at: 2023-09-25 08:00
 ---
 
