@@ -1,5 +1,5 @@
 ---
-title: "【Ruby】Enumerableとはなんぞや"
+title: "【Ruby】Enumerableとは"
 emoji: "💎"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["ruby"]
