@@ -3,8 +3,7 @@ title: "【Ruby】Array#include?を高速化する方法"
 emoji: "💎"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["ruby"]
-published: true
-published_at: 2023-09-14 08:00
+published: false
 ---
 ## 結論
 レシーバとなる要素を`to_set`メソッドで`Set`オブジェクトに変換し、`include?`を使うと高速に判定できます。
